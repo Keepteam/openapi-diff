@@ -2,8 +2,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using LimeFlight.OpenAPI.Diff.Compare;
 using LimeFlight.OpenAPI.Diff.Output;
@@ -17,10 +19,13 @@ namespace LimeFlight.OpenAPI.Diff.CLI
     {
         private ILogger _logger;
 
-        [Required]
+        private Lazy<HashSet<char>> _invalidFileCharsHasSet =
+            new Lazy<HashSet<char>>(() => Path.GetInvalidPathChars().ToHashSet());
+
+        [Required, FileExists]
         [Option(CommandOptionType.SingleValue, ShortName = "o", LongName = "old", Description = "Path to old OpenAPI Specification file")]
         public string OldPath { get; }
-        [Required]
+        [Required, FileExists]
         [Option(CommandOptionType.SingleValue, ShortName = "n", LongName = "new", Description = "Path to new OpenAPI Specification file")]
         public string NewPath { get; }
 
@@ -40,7 +45,6 @@ namespace LimeFlight.OpenAPI.Diff.CLI
         public string Text { get; }
 
         [Option(CommandOptionType.SingleValue, Description = "Set log level (default: trace)")]
-
         public LogLevel LogLevel { get; } = LogLevel.Trace;
         
         static int Main(string[] args)
@@ -68,30 +72,12 @@ namespace LimeFlight.OpenAPI.Diff.CLI
 
             var openAPICompare = serviceProvider.GetService<IOpenAPICompare>();
             var result = openAPICompare.FromLocations(OldPath, NewPath);
-            if (ToConsole)
-            {
-                var renderer = serviceProvider.GetService<IConsoleRender>();
-                var renderedResult = renderer.Render(result);
-                Console.WriteLine(renderedResult);
-            }
-            if (HTML != null && Uri.IsWellFormedUriString(HTML, UriKind.RelativeOrAbsolute))
-            {
-                var renderer = serviceProvider.GetService<IHtmlRender>();
-                var renderedResult = await renderer.Render(result);
-                SaveToFile(renderedResult, HTML);
-            }
-            if (Markdown != null && Uri.IsWellFormedUriString(Markdown, UriKind.RelativeOrAbsolute))
-            {
-                var renderer = serviceProvider.GetService<IMarkdownRender>();
-                var renderedResult = await renderer.Render(result);
-                SaveToFile(renderedResult, Markdown);
-            }
             
-            if (Text != null && Uri.IsWellFormedUriString(Text, UriKind.RelativeOrAbsolute))
+            var renders = GetRendersByArgs(serviceProvider);
+            foreach (var tuple in renders)
             {
-                var renderer = serviceProvider.GetService<IConsoleRender>();
-                var renderedResult = await renderer.Render(result);
-                SaveToFile(renderedResult, Text);
+                var renderResult = await tuple.Item1.Render(result);
+                tuple.Item2(renderResult);
             }
 
             switch (ExitType)
@@ -111,6 +97,7 @@ namespace LimeFlight.OpenAPI.Diff.CLI
             _logger.LogDebug("All done!");
             return Environment.ExitCode;
         }
+        
 
         private void SaveToFile(string renderedResult, string path)
         {
@@ -122,6 +109,48 @@ namespace LimeFlight.OpenAPI.Diff.CLI
             {
                 _logger.LogError(e.ToString());
             }
+        }
+        
+        private IEnumerable<Tuple<IRender, Action<string>>> GetRendersByArgs(ServiceProvider serviceProvider)
+        {
+            if (ToConsole)
+            {
+                yield return Tuple.Create<IRender, Action<string>>(serviceProvider.GetService<IConsoleRender>(), 
+                    (result) => Console.WriteLine(result));
+            }
+            if (IsValidPath(HTML))
+            {
+                yield return Tuple.Create<IRender, Action<string>>(serviceProvider.GetService<IHtmlRender>(),
+                    (result) => SaveToFile(result, HTML));
+            }
+            if (IsValidPath(Markdown))
+            {
+                yield return Tuple.Create<IRender, Action<string>>(serviceProvider.GetService<IMarkdownRender>(),
+                    (result) => SaveToFile(result, Markdown));
+            }
+            
+            if (IsValidPath(Text))
+            {
+                yield return Tuple.Create<IRender, Action<string>>(serviceProvider.GetService<IConsoleRender>(),
+                    (result) => SaveToFile(result, Text));
+            }
+        }
+
+        private bool IsValidPath(string filePath)
+        {
+            if (string.IsNullOrWhiteSpace(filePath))
+            {
+                return false;
+            }
+
+            var isValid = !filePath.Any(c => _invalidFileCharsHasSet.Value.Contains(c));
+            if (isValid)
+            {
+                return true;
+            }
+            
+            _logger.LogError($"Error export to \"{filePath}\"");
+            return false;
         }
     }
 }
