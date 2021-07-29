@@ -36,6 +36,13 @@ namespace LimeFlight.OpenAPI.Diff.CLI
         [Option(CommandOptionType.SingleValue, Description = "Export diff as html in given file")]
         public string HTML { get; }
 
+        [Option(CommandOptionType.SingleValue, Description = "Export diff as text in given file")]
+        public string Text { get; }
+
+        [Option(CommandOptionType.SingleValue, Description = "Set log level (default: trace)")]
+
+        public LogLevel LogLevel { get; } = LogLevel.Trace;
+        
         static int Main(string[] args)
             => CommandLineApplication.Execute<Program>(args);
 
@@ -45,7 +52,7 @@ namespace LimeFlight.OpenAPI.Diff.CLI
             var serviceProvider = new ServiceCollection()
                 .AddLogging(builder =>
                 {
-                    builder.AddFilter("", LogLevel.Trace);
+                    builder.AddFilter("", LogLevel);
                     builder.AddConsole();
                 })
                 .AddSingleton<IOpenAPICompare, OpenAPICompare>()
@@ -78,6 +85,13 @@ namespace LimeFlight.OpenAPI.Diff.CLI
                 var renderer = serviceProvider.GetService<IMarkdownRender>();
                 var renderedResult = await renderer.Render(result);
                 SaveToFile(renderedResult, Markdown);
+            }
+            
+            if (Text != null && Uri.IsWellFormedUriString(Text, UriKind.RelativeOrAbsolute))
+            {
+                var renderer = serviceProvider.GetService<IConsoleRender>();
+                var renderedResult = await renderer.Render(result);
+                SaveToFile(renderedResult, Text);
             }
 
             switch (ExitType)
