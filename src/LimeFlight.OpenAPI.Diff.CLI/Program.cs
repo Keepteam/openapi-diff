@@ -9,6 +9,7 @@ using LimeFlight.OpenAPI.Diff.Compare;
 using LimeFlight.OpenAPI.Diff.Output;
 using LimeFlight.OpenAPI.Diff.Output.Html;
 using LimeFlight.OpenAPI.Diff.Output.Markdown;
+using LimeFlight.OpenAPI.Diff.Utils;
 
 namespace LimeFlight.OpenAPI.Diff.CLI
 {
@@ -51,6 +52,7 @@ namespace LimeFlight.OpenAPI.Diff.CLI
                 .AddSingleton<IMarkdownRender, MarkdownRender>()
                 .AddSingleton<IHtmlRender, HtmlRender>()
                 .AddSingleton<IConsoleRender, ConsoleRender>()
+                .AddSingleton<OpenApiDiagnosticErrorsProcessor, IgnoreOpenApiDiagnosticErrorsProcessor>()
                 .AddTransient(x => (IExtensionDiff)x.GetService(typeof(ExtensionDiff)))
                 .BuildServiceProvider();
 
