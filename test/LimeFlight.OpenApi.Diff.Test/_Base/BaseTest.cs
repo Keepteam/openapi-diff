@@ -4,6 +4,7 @@ using System.Reflection;
 using LimeFlight.OpenAPI.Diff;
 using LimeFlight.OpenAPI.Diff.Compare;
 using LimeFlight.OpenAPI.Diff.Tests;
+using LimeFlight.OpenAPI.Diff.Utils;
 using Xunit.Abstractions;
 
 namespace LimeFlight.OpenApi.Diff.Tests._Base
@@ -17,6 +18,7 @@ namespace LimeFlight.OpenApi.Diff.Tests._Base
         {
             var services = new ServiceCollection();
             services.AddTransient<ITestUtils, TestUtils>();
+            services.AddTransient<OpenApiDiagnosticErrorsProcessor>();
             services.AddTransient<IOpenAPICompare, OpenAPICompare>();
             services.AddLogging();
             services.RegisterAll<IExtensionDiff>(new[] {GetType().Assembly}, ServiceLifetime.Transient);
