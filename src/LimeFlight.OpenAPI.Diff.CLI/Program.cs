@@ -20,7 +20,7 @@ namespace LimeFlight.OpenAPI.Diff.CLI
         private ILogger _logger;
 
         private readonly Lazy<HashSet<char>> _invalidPathCharsHashSet =
-            new(() => Path.GetInvalidPathChars().ToHashSet());
+            new Lazy<HashSet<char>>(() => Path.GetInvalidPathChars().ToHashSet());
 
         [Required, FileExists]
         [Option(CommandOptionType.SingleValue, ShortName = "o", LongName = "old", Description = "Path to old OpenAPI Specification file")]
