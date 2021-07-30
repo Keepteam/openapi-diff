@@ -19,8 +19,8 @@ namespace LimeFlight.OpenAPI.Diff.CLI
     {
         private ILogger _logger;
 
-        private Lazy<HashSet<char>> _invalidFileCharsHasSet =
-            new Lazy<HashSet<char>>(() => Path.GetInvalidPathChars().ToHashSet());
+        private readonly Lazy<HashSet<char>> _invalidPathCharsHashSet =
+            new(() => Path.GetInvalidPathChars().ToHashSet());
 
         [Required, FileExists]
         [Option(CommandOptionType.SingleValue, ShortName = "o", LongName = "old", Description = "Path to old OpenAPI Specification file")]
@@ -143,7 +143,7 @@ namespace LimeFlight.OpenAPI.Diff.CLI
                 return false;
             }
 
-            var isValid = !filePath.Any(c => _invalidFileCharsHasSet.Value.Contains(c));
+            var isValid = !filePath.Any(c => _invalidPathCharsHashSet.Value.Contains(c));
             if (isValid)
             {
                 return true;
