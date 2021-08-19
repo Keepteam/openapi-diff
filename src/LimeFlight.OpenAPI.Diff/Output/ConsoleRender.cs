@@ -28,7 +28,7 @@ namespace LimeFlight.OpenAPI.Diff.Output
         {
             try
             {
-                _consoleWidth = Console.BufferWidth;
+                _consoleWidth = Console.WindowWidth;
             }
             catch
             {
