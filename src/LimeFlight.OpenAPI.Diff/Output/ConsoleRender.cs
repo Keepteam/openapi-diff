@@ -18,7 +18,28 @@ namespace LimeFlight.OpenAPI.Diff.Output
 
         private static ChangedOpenApiBO _diff;
 
+        private const int DefaultConsoleWidth = 80;
+
+        private static readonly int _consoleWidth = DefaultConsoleWidth;
+
         private StringBuilder _output;
+
+        static ConsoleRender()
+        {
+            try
+            {
+                _consoleWidth = Console.BufferWidth;
+            }
+            catch
+            {
+                // Console.BufferWidth(get) will throw exceptions in certain circumstances
+            }
+
+            if (_consoleWidth < 10) // Mono will return 0 instead of throwing an exception
+            {
+                _consoleWidth = DefaultConsoleWidth;
+            }
+        }
 
         public Task<string> Render(ChangedOpenApiBO diff)
         {
@@ -100,19 +121,19 @@ namespace LimeFlight.OpenAPI.Diff.Output
             var offset = little.Length * 2;
 
             return
-                $"{Separator(ch)}{little}{Center(title, -offset)}{little.PadLeft(Console.WindowWidth / 2 - title.Length / 2 + little.Length)}{Environment.NewLine}{Separator(ch)}";
+                $"{Separator(ch)}{little}{Center(title, -offset)}{little.PadLeft(_consoleWidth / 2 - title.Length / 2 + little.Length)}{Environment.NewLine}{Separator(ch)}";
         }
 
         private static StringBuilder Separator(char ch)
         {
             var sb = new StringBuilder();
-            return sb.Append(new string(ch, Console.WindowWidth))
+            return sb.Append(new string(ch, _consoleWidth))
                 .Append(Environment.NewLine);
         }
 
         private static string Center(string center, int offset = 0)
         {
-            return string.Format("{0," + (Console.WindowWidth / 2 + center.Length / 2 + offset) + "}", center);
+            return string.Format("{0," + (_consoleWidth / 2 + center.Length / 2 + offset) + "}", center);
         }
 
         private static string OlChanged(IReadOnlyCollection<ChangedOperationBO> operations)
