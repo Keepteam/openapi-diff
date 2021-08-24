@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <PackageId>LimeFlight.OpenAPI.Diff</PackageId>
+    <PackageId>LimeFlight.OpenAPI.Diff.CaseOne</PackageId>
     <Authors>LimeFlight</Authors>
     <Company>LimeFlight</Company>
     <PackageOutputPath>./nupkg</PackageOutputPath>
